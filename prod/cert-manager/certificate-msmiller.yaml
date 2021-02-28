@@ -1,0 +1,12 @@
+apiVersion: cert-manager.io/v1alpha2
+kind: Certificate
+metadata:
+  name: nginx-tls-msmilller-hikes-dev
+  namespace: default
+spec:
+  secretName: nginx-msmiller-hikes-dev-tls
+  issuerRef:
+    name: letsencrypt-production
+    kind: ClusterIssuer
+  dnsNames:
+    - msmiller.hikes.dev

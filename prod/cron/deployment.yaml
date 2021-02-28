@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: nextcloud-cron
+  name: nextcloud-cron
+spec:
+  selector:
+    matchLabels:
+      app: nextcloud-cron
+  replicas: 1
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: nextcloud-cron
+    spec:
+      containers:
+        - image: arm64v8/nextcloud:21.0.0-fpm
+          name: cron
+          command:
+            - /cron.sh
+          volumeMounts:
+            - name: nextcloud-app-pvc
+              mountPath: /var/www/html
+      restartPolicy: Always
+      volumes:
+        - name: nextcloud-app-pvc
+          persistentVolumeClaim:
+            claimName: nextcloud-app-pvc

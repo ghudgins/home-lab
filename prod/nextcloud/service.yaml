@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: nextcloud-app
+  labels:
+    component: nextcloud-app-service
+spec:
+  ports:
+    - port: 9000
+  selector:
+    component: nextcloud-fpm
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nextcloud-nginx
+  labels:
+    component: nextcloud-nginx-service
+spec:
+  ports:
+    - port: 80
+  selector:
+    component: nextcloud-nginx

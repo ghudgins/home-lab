@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis-primary
+  labels:
+    name: redis-primary
+spec:
+  replicas: 1 
+  selector:
+    matchLabels:
+      name: redis-primary
+  template:
+    metadata:
+      labels:
+        name: redis-primary
+    spec:
+      subdomain: primary
+      containers:
+      - name: redis
+        image: arm64v8/redis:6.0.9
+        command:
+          - "redis-server"
+        args:
+          - "--protected-mode"
+          - "no"
+          - "--requirepass"
+          - "REPLACE_ME"
+        ports:
+        - containerPort: 6379
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis-replica
+  labels:
+    name: redis-replica
+spec:
+  replicas: 2 
+  selector:
+    matchLabels:
+      name: redis-replica
+  template:
+    metadata:
+      labels:
+        name: redis-replica
+    spec:
+      subdomain: replica
+      containers:
+      - name: redis
+        image: arm64v8/redis:6.0.9
+        command:
+          - "redis-server"
+          - "--slaveof"
+          - "redis-primary.default.svc.cluster.local"
+          - "6379"
+          - "--masterauth" 
+          - "REPLACE_ME"
+        ports:
+        - containerPort: 6379

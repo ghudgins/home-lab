@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    component: nextcloud-db
+  name: nextcloud-db
+spec:
+  selector:
+    matchLabels:
+      component: nextcloud-db
+  replicas: 1
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        component: nextcloud-db
+    spec:
+      containers:
+        - name: nextcloud-db
+          image: mariadb:latest
+          ports:
+            - containerPort: 3306
+          env:
+            - name: MYSQL_DATABASE
+              valueFrom:
+                secretKeyRef:
+                  key: MYSQL_DATABASE
+                  name: nextcloud-db-secrets
+            - name: MYSQL_USER
+              valueFrom:
+                secretKeyRef:
+                  key: MYSQL_USER
+                  name: nextcloud-db-secrets
+            - name: MYSQL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  key: MYSQL_PASSWORD
+                  name: nextcloud-db-secrets
+            - name: MYSQL_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  key: MYSQL_ROOT_PASSWORD
+                  name: nextcloud-db-secrets
+          volumeMounts:
+            - mountPath: /var/lib/mysql
+              name: db-persistent-storage
+      restartPolicy: Always
+      volumes:
+        - name: db-persistent-storage
+          persistentVolumeClaim:
+            claimName: nextcloud-db-pvc

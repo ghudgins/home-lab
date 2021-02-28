@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: duckdns-deployment
+  namespace: kube-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: duckdns-ddns
+  template:
+    metadata:
+      labels:
+        app: duckdns-ddns
+    spec:
+      containers:
+      - name: duckdns-container
+        image: linuxserver/duckdns
+        env:
+          - name: TZ
+            value: "America/New_York"
+          - name: SUBDOMAINS
+            value: "hikes"
+          - name: TOKEN
+            valueFrom:
+              secretKeyRef:
+                name: duckdns-secret
+                key: token
+        ports:
+        - containerPort: 80

@@ -1,0 +1,351 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nextcloud-nginx-confmaps
+data:
+  nginx.conf: |
+    worker_processes auto;
+
+    error_log  /var/log/nginx/error.log warn;
+    pid        /var/run/nginx.pid;
+
+
+    events {
+        worker_connections  1024;
+    }
+
+
+    http {
+        proxy_read_timeout 300;
+        proxy_connect_timeout 300;
+        proxy_send_timeout 300;
+
+        include       /etc/nginx/mime.types;
+        default_type  application/octet-stream;
+
+        log_format  main  '$remote_addr - $remote_user [$time_local] "$request" '
+                          '$status $body_bytes_sent "$http_referer" '
+                          '"$http_user_agent" "$http_x_forwarded_for"';
+
+        access_log  /var/log/nginx/access.log  main;
+
+        sendfile        on;
+        #tcp_nopush     on;
+
+        keepalive_timeout  65;
+
+        #gzip  on;
+
+        upstream php-handler {
+            server nextcloud-app.default.svc.cluster.local:9000;
+        }
+
+        server {
+            listen 80;
+
+            # Add headers to serve security related headers
+            # Before enabling Strict-Transport-Security headers please read into this
+            # topic first.
+            add_header Strict-Transport-Security "max-age=15768000; includeSubDomains; preload;" always;
+            #
+            # WARNING: Only add the preload option once you read about
+            # the consequences in https://hstspreload.org/. This option
+            # will add the domain to a hardcoded list that is shipped
+            # in all major browsers and getting removed from this list
+            # could take several months.
+            add_header Referrer-Policy "no-referrer" always;
+            add_header X-Content-Type-Options "nosniff" always;
+            add_header X-Download-Options "noopen" always;
+            add_header X-Frame-Options "SAMEORIGIN" always;
+            add_header X-Permitted-Cross-Domain-Policies "none" always;
+            add_header X-Robots-Tag "none" always;
+            add_header X-XSS-Protection "1; mode=block" always;
+
+            # Remove X-Powered-By, which is an information leak
+            fastcgi_hide_header X-Powered-By;
+
+            # Path to the root of your installation
+            root /var/www/html;
+
+            location = /robots.txt {
+                allow all;
+                log_not_found off;
+                access_log off;
+            }
+
+            
+            # ***** well-known nginx config *****
+
+            location = /.well-known/carddav {
+                return 301 /remote.php/dav;
+            }
+
+            location = /.well-known/caldav {
+                return 301 /remote.php/dav;
+            }
+
+
+
+            # set max upload size
+            client_max_body_size 10G;
+            fastcgi_buffers 64 4K;
+
+            # Enable gzip but do not remove ETag headers
+            gzip on;
+            gzip_vary on;
+            gzip_comp_level 4;
+            gzip_min_length 256;
+            gzip_proxied expired no-cache no-store private no_last_modified no_etag auth;
+            gzip_types application/atom+xml application/javascript application/json application/ld+json application/manifest+json application/rss+xml application/vnd.geo+json application/vnd.ms-fontobject application/x-font-ttf application/x-web-app-manifest+json application/xhtml+xml application/xml font/opentype image/bmp image/svg+xml image/x-icon text/cache-manifest text/css text/plain text/vcard text/vnd.rim.location.xloc text/vtt text/x-component text/x-cross-domain-policy;
+
+            # Uncomment if your server is build with the ngx_pagespeed module
+            # This module is currently not supported.
+            #pagespeed off;
+
+            location / {
+                rewrite ^ /index.php;
+            }
+
+            location ~ ^\/(?:build|tests|config|lib|3rdparty|templates|data)\/ {
+                deny all;
+            }
+            location ~ ^\/(?:\.|autotest|occ|issue|indie|db_|console) {
+                deny all;
+            }
+
+            location ~ ^\/(?:index|remote|public|cron|core\/ajax\/update|status|ocs\/v[12]|updater\/.+|oc[ms]-provider\/.+)\.php(?:$|\/) {
+                fastcgi_split_path_info ^(.+?\.php)(\/.*|)$;
+                set $path_info $fastcgi_path_info;
+                try_files $fastcgi_script_name =404;
+                include fastcgi_params;
+                fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+                fastcgi_param PATH_INFO $path_info;
+                # fastcgi_param HTTPS on;
+
+                # Avoid sending the security headers twice
+                fastcgi_param modHeadersAvailable true;
+
+                # Enable pretty urls
+                fastcgi_param front_controller_active true;
+                fastcgi_pass php-handler;
+                fastcgi_intercept_errors on;
+                fastcgi_request_buffering off;
+            }
+
+            location ~ ^\/(?:updater|oc[ms]-provider)(?:$|\/) {
+                try_files $uri/ =404;
+                index index.php;
+            }
+
+            # Adding the cache control header for js, css and map files
+            # Make sure it is BELOW the PHP block
+            location ~ \.(?:css|js|woff2?|svg|gif|map)$ {
+                try_files $uri /index.php$request_uri;
+                add_header Cache-Control "public, max-age=15778463";
+                # Add headers to serve security related headers (It is intended to
+                # have those duplicated to the ones above)
+                # Before enabling Strict-Transport-Security headers please read into
+                # this topic first.
+                #add_header Strict-Transport-Security "max-age=15768000; includeSubDomains; preload;" always;
+                #
+                # WARNING: Only add the preload option once you read about
+                # the consequences in https://hstspreload.org/. This option
+                # will add the domain to a hardcoded list that is shipped
+                # in all major browsers and getting removed from this list
+                # could take several months.
+                add_header Referrer-Policy "no-referrer" always;
+                add_header X-Content-Type-Options "nosniff" always;
+                add_header X-Download-Options "noopen" always;
+                add_header X-Frame-Options "SAMEORIGIN" always;
+                add_header X-Permitted-Cross-Domain-Policies "none" always;
+                add_header X-Robots-Tag "none" always;
+                add_header X-XSS-Protection "1; mode=block" always;
+
+                # Optional: Don't log access to assets
+                access_log off;
+            }
+
+            location ~ \.(?:png|html|ttf|ico|jpg|jpeg|bcmap|mp4|webm)$ {
+                try_files $uri /index.php$request_uri;
+                # Optional: Don't log access to other assets
+                access_log off;
+            }
+        }
+    }
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nextcloud-php-confmaps
+data:
+  logging.ini: |
+        error_log=/proc/self/fd/2
+        log_errors=On
+        display_errors=Off
+        error_reporting = E_ALL & ~E_DEPRECATED & ~E_STRICT
+  memory-limit.ini: |
+        memory_limit = 2048M
+        post_max_size = 2048M
+        file_uploads = On
+        upload_max_filesize = 2048M
+        max_file_uploads = 2000
+
+  docker-php-ext-opcache.ini: |
+        zend_extension=opcache.so
+        opcache.enable=1
+        opcache.enable_cli=1
+        opcache.interned_strings_buffer=8
+        opcache.max_accelerated_files=10000
+        opcache.memory_consumption=512
+        opcache.save_comments=1
+        opcache.revalidate_freq=1
+  www.conf: |
+        [www]
+
+        user = www-data
+        group = www-data
+
+        listen = 127.0.0.1:9000
+
+        pm = static
+        pm.max_children = 25
+        pm.start_servers = 10
+        pm.min_spare_servers = 5
+        pm.max_spare_servers = 15
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    component: nextcloud-fpm
+  name: nextcloud-fpm
+spec:
+  selector:
+    matchLabels:
+      component: nextcloud-fpm
+  replicas: 1
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        component: nextcloud-fpm
+    spec:
+      containers:
+        - image: arm64v8/nextcloud:21.0.0-fpm
+          imagePullPolicy: Always
+          name: nextcloud-fpm
+          ports:
+            - containerPort: 9000
+          env:
+            - name: MYSQL_DATABASE
+              value: nextcloud
+            - name: MYSQL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: nextcloud-secret
+                  key: MYSQL_PASSWORD
+            - name: MYSQL_USER
+              value: nextcloud
+            - name: MYSQL_HOST
+              value: nextcloud-db.default.svc.cluster.local:3306
+            - name: REDIS_HOST
+              value: redis-primary.default.svc.cluster.local
+            - name: REDIS_HOST_PORT
+              value: "6379"
+            - name: REDIS_HOST_PASSWORD
+              value: REPLACE_ME
+            - name: OBJECTSTORE_S3_REGION
+              value: us-east-1
+            - name: OBJECTSTORE_S3_HOST
+              value: s3.amazonaws.com
+            - name: OBJECTSTORE_S3_BUCKET
+              value: nextcloud-data
+            - name: OBJECTSTORE_S3_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: nextcloud-secret
+                  key: OBJECTSTORE_S3_KEY
+            - name: OBJECTSTORE_S3_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: nextcloud-secret
+                  key: OBJECTSTORE_S3_SECRET
+            - name: TRUSTED_PROXIES
+              value: 192.168.86.34
+            - name: OVERWRITEPROTOCOL
+              value: https
+            - name: SMTP_HOST
+              value: smtp-service.default.svc.cluster.local
+            - name: SMTP_PORT
+              value: "25"
+            - name: SMTP_NAME
+              value: notifications@hikes.dev
+            - name: SMTP_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: nextcloud-secret
+                  key: SMTP_PASSWORD
+            - name: MAIL_FROM_ADDRESS
+              value: notifications@hikes.dev
+            - name: NEXTCLOUD_TRUSTED_DOMAINS
+              value: cloud.hikes.dev
+          volumeMounts:
+            - mountPath: /var/www/html
+              name: nextcloud-fpm-persistent-storage
+            - mountPath: /usr/local/etc/php/conf.d/logging.ini
+              name: nextcloud-php-confmaps
+              subPath: logging.ini
+            - mountPath: /usr/local/etc/php/conf.d/memory-limit.ini
+              name: nextcloud-php-confmaps
+              subPath: memory-limit.ini
+            - mountPath: /usr/local/etc/php-fpm.d/www.conf
+              name: nextcloud-php-confmaps
+              subPath: www.conf
+            - mountPath: /usr/local/etc/php/conf.d/docker-php-ext-opcache.ini
+              name: nextcloud-php-confmaps
+              subPath: docker-php-ext-opcache.ini
+      restartPolicy: Always
+      volumes:
+        - name: nextcloud-fpm-persistent-storage
+          persistentVolumeClaim:
+            claimName: nextcloud-app-pvc
+        - name: nextcloud-php-confmaps
+          configMap:
+            name: nextcloud-php-confmaps
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    component: nextcloud-nginx
+  name: nextcloud-nginx
+spec:
+  selector:
+    matchLabels:
+      component: nextcloud-nginx
+  replicas: 1
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        component: nextcloud-nginx
+    spec:
+      containers:
+        - name: nextcloud-nginx
+          image: nginx
+          volumeMounts:
+          - mountPath: /var/www/html
+            name: nextcloud-fpm-persistent-storage
+          - mountPath: /etc/nginx/nginx.conf
+            name: nextcloud-nginx-confmaps
+            subPath: nginx.conf
+      volumes:
+        - name: nextcloud-fpm-persistent-storage
+          persistentVolumeClaim:
+            claimName: nextcloud-app-pvc
+        - name: nextcloud-nginx-confmaps
+          configMap:
+            name: nextcloud-nginx-confmaps
+        

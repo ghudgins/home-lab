@@ -1,0 +1,39 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: name-based-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "300"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "300"
+    nginx.ingress.kubernetes.io/proxy-body-size: "2048m"
+    nginx.ingress.kubernetes.io/proxy-max-temp-file-size: "2048m"
+    nginx.org/client-max-body-size: "2048m"
+spec:
+  tls:
+  - hosts:
+      - cloud.hikes.dev
+    secretName: nginx-cloud-hikes-dev-tls
+  - hosts:
+      - about.hikes.dev
+    secretName: nginx-about-hikes-dev-tls    
+  rules:
+  - host: mysite.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: nextcloud-nginx
+            port:
+              number: 80
+  - host: myothersite.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: wordpress
+            port:
+              number: 80
