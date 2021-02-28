@@ -1,6 +1,6 @@
 ### Manually install docker & kubeadm / kubectl / kubelet
 
-##### Docker
+##### Docker (TODO: use containerd now that k8s has deprecated docker container runtime)
 ```
 curl -fsSL https://get.docker.com -o get-docker.sh
 sudo sh get-docker.sh
@@ -55,6 +55,7 @@ sudo apt-get update   && sudo apt-get install -y apt-transport-https   && curl -
 sudo reboot now
 ```
 
+i'm lazy here's a bunch of commands that do it
 ```
     9  echo "deb http://apt.kubernetes.io/ kubernetes-xenial main"   | sudo tee -a /etc/apt/sources.list.d/kubernetes.list   && sudo apt-get update
    10  sudo apt-get update
@@ -65,25 +66,6 @@ sudo reboot now
 sudo apt-mark hold kubelet kubeadm kubectl
 ```
 
-
-### Clean History (all steps to this point)
-```
-    1  passwd
-    2  sudo raspi-config
-    4  sudo dphys-swapfile swapoff &&   sudo dphys-swapfile uninstall &&   sudo update-rc.d dphys-swapfile remove
-    5  sudo systemctl disable dphys-swapfile
-    6  sudo apt-get update   && sudo apt-get install -qy docker.io
-    7  sudo apt-get update   && sudo apt-get install -y apt-transport-https   && curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
-    8  sudo reboot now
-    9  echo "deb http://apt.kubernetes.io/ kubernetes-xenial main"   | sudo tee -a /etc/apt/sources.list.d/kubernetes.list   && sudo apt-get update
-   10  sudo apt-get update
-   11  sudo apt install kubelet
-   12  sudo apt install kubeadm
-   13  sudo apt install kubernetes-cni
-   14  sudo apt-get update   && sudo apt-get install -yq   kubelet   kubeadm   kubernetes-cni
-   15  sudo apt-mark hold kubelet kubeadm kubectl
-   16  sudo kubeadm
-```
 
 ### HA (3 nodes only)
 
@@ -143,7 +125,7 @@ vrrp_instance VI_1 {
 }
 ```
 
-**slightly different configuration for backup 1**
+**slightly different configuration for master node 2 (priority is lower)**
 
 ```
 ! /etc/keepalived/keepalived.conf
@@ -177,7 +159,7 @@ vrrp_instance VI_1 {
 }
 ```
 
-**slightly different configuration for backup 2**
+**slightly different configuration for master node 3 (priority is even lower)**
 
 ```
 ! /etc/keepalived/keepalived.conf
@@ -306,13 +288,13 @@ kubeadm init \
  kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
 ```
 
-One time we had to delete the interface when the pods wouldn't start 
+One time we had to delete the interface when the pods wouldn't start. didn't happen the latest time through this doc
 ```
 sudo ip link delete flannel.1
 ```
 
 ### Join as masters or workers
-(copy the output from above step)
+(copy the output from above step for the relevant actor)
 ```
 You can now join any number of the control-plane node running the following command on each as root:
 
@@ -326,13 +308,11 @@ Then you can join any number of worker nodes by running the following on each as
 
 
 ```
-### Copy config
+### Copy config so you can kubectl from your desktop
 
 ```
 scp -r ubuntu@msmiller:~/.kube /Users/ghudgins/
 ```
 
-### Metallb install 
 
-https://metallb.universe.tf/installation/
 

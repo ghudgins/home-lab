@@ -1,3 +1,9 @@
+### Metallb install 
+
+Good god it took me over a month to figure out I needed this
+
+https://metallb.universe.tf/installation/
+
 ### Install nginx-controller
 
  - install using the bare metal instructions maybe https://kubernetes.github.io/ingress-nginx/deploy/
