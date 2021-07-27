@@ -86,7 +86,10 @@ data:
                 return 301 /remote.php/dav;
             }
 
-
+            # ***** apm monitoring *****
+            location = /basic_status {
+                stub_status;
+            }
 
 
             # set max upload size
