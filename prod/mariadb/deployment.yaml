@@ -18,7 +18,7 @@ spec:
     spec:
       containers:
         - name: nextcloud-db
-          image: mariadb:latest
+          image: mariadb:10.5.11
           ports:
             - containerPort: 3306
           env:
@@ -26,22 +26,22 @@ spec:
               valueFrom:
                 secretKeyRef:
                   key: MYSQL_DATABASE
-                  name: nextcloud-db-secrets
+                  name: db-secrets
             - name: MYSQL_USER
               valueFrom:
                 secretKeyRef:
                   key: MYSQL_USER
-                  name: nextcloud-db-secrets
+                  name: db-secrets
             - name: MYSQL_PASSWORD
               valueFrom:
                 secretKeyRef:
                   key: MYSQL_PASSWORD
-                  name: nextcloud-db-secrets
+                  name: db-secrets
             - name: MYSQL_ROOT_PASSWORD
               valueFrom:
                 secretKeyRef:
                   key: MYSQL_ROOT_PASSWORD
-                  name: nextcloud-db-secrets
+                  name: db-secrets
           volumeMounts:
             - mountPath: /var/lib/mysql
               name: db-persistent-storage
@@ -49,4 +49,4 @@ spec:
       volumes:
         - name: db-persistent-storage
           persistentVolumeClaim:
-            claimName: nextcloud-db-pvc
+            claimName: nextcloud-db-pv-claim

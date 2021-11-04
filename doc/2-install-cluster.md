@@ -1,12 +1,23 @@
 ### Manually install docker & kubeadm / kubectl / kubelet
 
-##### Docker (TODO: use containerd now that k8s has deprecated docker container runtime)
+##### Install Container.d
+
+Follow these configuration instructions
+https://kubernetes.io/docs/setup/production-environment/container-runtimes/#containerd
+
+then start it 
+`systemctl enable --now containerd`
+
+_todo: you might have to do something to add it to system start_
+
+
+##### SKIP: Docker
 ```
 curl -fsSL https://get.docker.com -o get-docker.sh
 sudo sh get-docker.sh
 ```
 
-### Set docker to use systemd
+### SKIP: Set docker to use systemd
 
 ```
 # Set up the Docker daemon
@@ -30,7 +41,7 @@ and then reboot
 `sudo systemctl restart docker`
 
 
-### Add to boot
+##### CGROUPS settings in boot
 
 Ubuntu:
 ```
@@ -67,7 +78,7 @@ sudo apt-mark hold kubelet kubeadm kubectl
 ```
 
 
-### HA (3 nodes only)
+### HA (Primary nodes only)
 
 * install keepalived
 * install haproxy
@@ -271,7 +282,7 @@ backend apiserver
 ```
 
 
-### Initialize master
+### Initialize primary (once) 
 
 ```
 kubeadm init \
@@ -296,15 +307,8 @@ sudo ip link delete flannel.1
 ### Join as masters or workers
 (copy the output from above step for the relevant actor)
 ```
-You can now join any number of the control-plane node running the following command on each as root:
+sudo kubeadm join 192.168.86.39:6443 --token {generate token} --discovery-token-ca-cert-hash sha256:{generate-public-sha} --cri-socket /run/containerd/containerd.sock --config kubeadm-config.yaml
 
-<<secret backed up in keybase>>
-
-Please note that the certificate-key gives access to cluster sensitive data, keep it secret!
-As a safeguard, uploaded-certs will be deleted in two hours; If necessary, you can use
-"kubeadm init phase upload-certs --upload-certs" to reload certs afterward.
-
-Then you can join any number of worker nodes by running the following on each as root:
 
 
 ```
