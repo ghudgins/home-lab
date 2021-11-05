@@ -4,6 +4,8 @@ metadata:
   name: nextcloud-nginx-confmaps
 data:
   nginx.conf: |
+    load_module /etc/nginx/modules/ngx_http_image_filter_module.so;
+
     worker_processes auto;
 
     error_log  /var/log/nginx/error.log warn;
@@ -84,6 +86,10 @@ data:
                 return 301 /remote.php/dav;
             }
 
+            # ***** apm monitoring *****
+            location = /basic_status {
+                stub_status;
+            }
 
 
             # set max upload size
@@ -212,6 +218,8 @@ data:
         pm.start_servers = 10
         pm.min_spare_servers = 5
         pm.max_spare_servers = 15
+
+        pm.status_path = /status
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -232,7 +240,7 @@ spec:
         component: nextcloud-fpm
     spec:
       containers:
-        - image: arm64v8/nextcloud:21.0.0-fpm
+        - image: arm64v8/nextcloud:21.0.3-fpm
           imagePullPolicy: Always
           name: nextcloud-fpm
           ports:
@@ -254,7 +262,7 @@ spec:
             - name: REDIS_HOST_PORT
               value: "6379"
             - name: REDIS_HOST_PASSWORD
-              value: REPLACE_ME
+              value: changeme
             - name: OBJECTSTORE_S3_REGION
               value: us-east-1
             - name: OBJECTSTORE_S3_HOST

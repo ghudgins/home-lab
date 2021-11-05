@@ -11,27 +11,27 @@ metadata:
 spec:
   tls:
   - hosts:
-      - cloud.hikes.dev
-    secretName: nginx-cloud-hikes-dev-tls
+      - host-no-quote
+    secretName: nginx-
   - hosts:
-      - about.hikes.dev
-    secretName: nginx-about-hikes-dev-tls    
+      - host-no-quote
+    secretName: apache-
   rules:
-  - host: mysite.com
+  - host: ""
     http:
       paths:
-      - path: /
-        pathType: Prefix
+      - pathType: Prefix
+        path: "/"
         backend:
           service:
             name: nextcloud-nginx
             port:
               number: 80
-  - host: myothersite.com
+  - host: ""
     http:
       paths:
-      - path: /
-        pathType: Prefix
+      - pathType: Prefix
+        path: "/"
         backend:
           service:
             name: wordpress
