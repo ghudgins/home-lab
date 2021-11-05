@@ -1,0 +1,82 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: wordpress-php-confmaps
+data:
+  php.ini: |
+        upload_max_filesize = 128M
+        post_max_size = 128M
+        max_execution_time = 1000
+        memory_limit = 2048M
+  uploads.ini: |
+        file_uploads = On
+        memory_limit = 1024M
+        upload_max_filesize = 500M
+        post_max_size = 500M
+        max_execution_time = 600
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: wordpress
+  labels:
+    app: wordpress
+spec:
+  ports:
+  - port: 80
+  selector:
+    app: wordpress
+    tier: frontend
+  type: NodePort
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: wordpress
+  labels:
+    app: wordpress
+    tier: frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: wordpress
+      tier: frontend
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: wordpress
+        tier: frontend
+    spec:
+      containers:
+      - image: wordpress:5-apache
+        name: wordpress
+        env:
+        - name: WORDPRESS_DB_HOST
+          value: wordpress-mysql
+        - name: WORDPRESS_DB_PASSWORD
+          valueFrom:
+              secretKeyRef:
+                name: wordpress-db-secret
+                key: token
+        ports:
+        - containerPort: 80
+          name: wordpress
+        volumeMounts:
+        - name: wordpress-persistent-storage
+          mountPath: /var/www/html
+        - name: wordpress-php-confmaps
+          mountPath: /var/www/html/wp-admin/php.ini
+          subPath: php.ini
+        - name: wordpress-php-confmaps
+          mountPath: /usr/local/etc/php/conf.d/uploads.ini
+          subPath: uploads.ini
+      volumes:
+      - name: wordpress-persistent-storage
+        persistentVolumeClaim:
+          claimName: wp-pv-claim
+      - name: wordpress-php-confmaps
+        configMap:
+          name: wordpress-php-confmaps
