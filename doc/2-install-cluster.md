@@ -5,10 +5,14 @@
 Follow these configuration AND installation instructions
 https://kubernetes.io/docs/setup/production-environment/container-runtimes/#containerd
 
+Then install it
+`sudo apt-get update -y`
+`sudo apt-get install -y containerd`
+
 then start it 
 `sudo systemctl enable --now containerd`
 
-_todo: verify you don't have to do any restart-aware things_
+_todo: you might have to do something to add it to system start_
 
 
 ##### SKIP: Docker steps for 
@@ -52,6 +56,8 @@ sudo vim /boot/firmware/cmdline.txt
 ```
  cgroup_enable=cpuset cgroup_memory=1 cgroup_enable=memory
 ```
+
+reboot
 
 ### Install k8s
 
