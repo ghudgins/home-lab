@@ -311,21 +311,16 @@ sudo ip link delete flannel.1
 ### Join as masters or workers
 (copy the output from above step for the relevant actor)
 
-kubeadm join 192.168.86.39:6443 --token 1gdx3p.lks10u60ogi70ebh     --discovery-token-ca-cert-hash sha256:61fc90aaa76fa15c3a2ee55825a542b5257e586e7ae4516c94f557a8cb6a1351
 
-sudo kubeadm join 192.168.86.39:6443 --token 1gdx3p.lks10u60ogi70ebh --discovery-token-ca-cert-hash sha256:61fc90aaa76fa15c3a2ee55825a542b5257e586e7ae4516c94f557a8cb6a1351 --cri-socket /run/containerd/containerd.sock 
-
-Use the container.d CRI 
 
 Workers, replace the tokens by printing a join command from another node
 
 `kubeadm token create --print-join-command`
 
+Combine the above token with the extra config for container.d
+
 ```
 sudo kubeadm join 192.168.86.39:6443 --token {generate token} --discovery-token-ca-cert-hash sha256:{generate-public-sha} --cri-socket /run/containerd/containerd.sock --config kubeadm-config.yaml
-
-
-
 ```
 ### Copy config so you can kubectl from your desktop
 
