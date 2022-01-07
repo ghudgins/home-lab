@@ -1,21 +1,17 @@
-### Manually install docker & kubeadm / kubectl / kubelet
+### Manually install container.d & kubeadm / kubectl / kubelet
 
-##### Install Container.d
+##### Install container.d
 
-Follow these configuration instructions
+Follow these configuration AND installation instructions
 https://kubernetes.io/docs/setup/production-environment/container-runtimes/#containerd
 
-Then install it
-`sudo apt-get update -y`
-`sudo apt-get install -y containerd`
-
 then start it 
-`systemctl enable --now containerd`
+`sudo systemctl enable --now containerd`
 
-_todo: you might have to do something to add it to system start_
+_todo: verify you don't have to do any restart-aware things_
 
 
-##### SKIP: Docker
+##### SKIP: Docker steps for 
 ```
 curl -fsSL https://get.docker.com -o get-docker.sh
 sudo sh get-docker.sh
@@ -52,23 +48,13 @@ Ubuntu:
 sudo vim /boot/firmware/cmdline.txt
 ```
 
-Raspian:
-`vim /boot/cmdline.txt`
-
-THEN add to end of the line
+...add to end of the line
 ```
-cgroup_enable=cpuset cgroup_memory=1 cgroup_enable=memory
+ cgroup_enable=cpuset cgroup_memory=1 cgroup_enable=memory
 ```
 
 ### Install k8s
 
-```
-sudo apt-get update   && sudo apt-get install -y apt-transport-https   && curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
-```
-
-```
-sudo reboot now
-```
 
 Install the version you want
 
@@ -312,15 +298,13 @@ sudo ip link delete flannel.1
 (copy the output from above step for the relevant actor)
 
 
-
 Workers, replace the tokens by printing a join command from another node
 
 `kubeadm token create --print-join-command`
 
-Combine the above token with the extra config for container.d
-
+add this to the end of what the join command prints
 ```
-sudo kubeadm join 192.168.86.39:6443 --token {generate token} --discovery-token-ca-cert-hash sha256:{generate-public-sha} --cri-socket /run/containerd/containerd.sock --config kubeadm-config.yaml
+--cri-socket /run/containerd/containerd.sock
 ```
 ### Copy config so you can kubectl from your desktop
 

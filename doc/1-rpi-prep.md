@@ -1,5 +1,5 @@
-.
-# Inventory if you aren't doing the subnet thing
+
+# Inventory 
 
 **msmiller** - dc:a6:32:bf:5d:15 - 192.168.86.33
 
@@ -22,33 +22,22 @@ order on rack (top to bottom):
  clear enclosure:
  - peggy
 
-# For the love of good do Ubuntu not Raspbian for all the following
 
 ### prep OS install
 
 use etcher & the ubntu light image
 
-### Raspbian only: with card still in desktop, add ssh to root of boot
-
-`touch /Volumes/boot/ssh`
-
-ubuntu - skip
-
-### Put the card in the pi :-)
+### Put the card in the pi
 
 ### Watch it boot on your router (MASTER)
 
 assign `192.168.86.33` static IP to the new device on router
-restart like a mug if it's ubuntu
+
+restart 
 
 For the workers you can see it boot up from the ssh on the master
 `cat /var/lib/misc/dnsmasq.leases`
 
-### reset password of `pi` or `ubuntu` user
-
-`passwd`
-
-*it just happens on ubuntu* 
 
 ### ssh-copy-id for speed connecting
 
@@ -72,21 +61,9 @@ sudo vim /etc/hosts
 ```
 
 reboot
-```
-sudo reboot 
-```
 
 
 ### disable swap or be in a world of pain later
-
-raspbian:
-```
-sudo dphys-swapfile swapoff && \
-  sudo dphys-swapfile uninstall && \
-  sudo update-rc.d dphys-swapfile remove
-```
-and then...
-`sudo systemctl disable dphys-swapfile`
 
 ubuntu:
 ```
