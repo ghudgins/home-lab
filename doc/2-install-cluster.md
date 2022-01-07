@@ -5,6 +5,10 @@
 Follow these configuration instructions
 https://kubernetes.io/docs/setup/production-environment/container-runtimes/#containerd
 
+Then install it
+`sudo apt-get update -y`
+`sudo apt-get install -y containerd`
+
 then start it 
 `systemctl enable --now containerd`
 
@@ -66,15 +70,15 @@ sudo apt-get update   && sudo apt-get install -y apt-transport-https   && curl -
 sudo reboot now
 ```
 
-i'm lazy here's a bunch of commands that do it
+Install the version you want
+
+For specific versions use this guide https://stackoverflow.com/questions/49721708/how-to-install-specific-version-of-kubernetes
+
 ```
-    9  echo "deb http://apt.kubernetes.io/ kubernetes-xenial main"   | sudo tee -a /etc/apt/sources.list.d/kubernetes.list   && sudo apt-get update
-   10  sudo apt-get update
-   11  sudo apt install kubelet
-   12  sudo apt install kubeadm
-   13  sudo apt install kubernetes-cni
-   14  sudo apt-get update   && sudo apt-get install -yq   kubelet   kubeadm   kubernetes-cni
-sudo apt-mark hold kubelet kubeadm kubectl
+curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add - && \
+  echo "deb http://apt.kubernetes.io/ kubernetes-xenial main" | sudo tee /etc/apt/sources.list.d/kubernetes.list && \
+  sudo apt-get update -q && \
+  sudo apt-get install -qy kubelet=1.19.3-00 kubectl=1.19.3-00 kubeadm=1.19.3-00
 ```
 
 
@@ -306,6 +310,17 @@ sudo ip link delete flannel.1
 
 ### Join as masters or workers
 (copy the output from above step for the relevant actor)
+
+kubeadm join 192.168.86.39:6443 --token 1gdx3p.lks10u60ogi70ebh     --discovery-token-ca-cert-hash sha256:61fc90aaa76fa15c3a2ee55825a542b5257e586e7ae4516c94f557a8cb6a1351
+
+sudo kubeadm join 192.168.86.39:6443 --token 1gdx3p.lks10u60ogi70ebh --discovery-token-ca-cert-hash sha256:61fc90aaa76fa15c3a2ee55825a542b5257e586e7ae4516c94f557a8cb6a1351 --cri-socket /run/containerd/containerd.sock 
+
+Use the container.d CRI 
+
+Workers, replace the tokens by printing a join command from another node
+
+`kubeadm token create --print-join-command`
+
 ```
 sudo kubeadm join 192.168.86.39:6443 --token {generate token} --discovery-token-ca-cert-hash sha256:{generate-public-sha} --cri-socket /run/containerd/containerd.sock --config kubeadm-config.yaml
 
